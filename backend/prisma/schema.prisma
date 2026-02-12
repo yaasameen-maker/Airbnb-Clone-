@@ -1,0 +1,687 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USER & AUTHENTICATION
+// ============================================================
+
+enum UserRole {
+  GUEST
+  HOST
+  ADMIN
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  password        String?   // Null for OAuth users
+  phone           String?
+  phoneVerified   Boolean   @default(false)
+  emailVerified   Boolean   @default(false)
+  
+  // Profile
+  firstName       String
+  lastName        String
+  photo           String?
+  bio             String?
+  hometown        String?
+  languages       String[]  @default([])
+  interests       String[]  @default([])
+  
+  // OAuth
+  googleId        String?   @unique
+  
+  // Role & Status
+  role            UserRole  @default(GUEST)
+  isActive        Boolean   @default(true)
+  
+  // Verification
+  govIdVerified   Boolean   @default(false)
+  govIdUrl        String?
+  
+  // Stripe
+  stripeCustomerId      String?   @unique
+  stripeConnectId       String?   @unique
+  stripeOnboarded       Boolean   @default(false)
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastLoginAt     DateTime?
+  
+  // Relations
+  refreshTokens         RefreshToken[]
+  verificationCodes     VerificationCode[]
+  experiences           Experience[]
+  bookings              Booking[]
+  reviews               Review[]
+  sentMessages          Message[]         @relation("SentMessages")
+  receivedMessages      Message[]         @relation("ReceivedMessages")
+  conversationMembers   ConversationMember[]
+  wishlists             Wishlist[]
+  connections           Connection[]      @relation("UserConnections")
+  connectionRequests    Connection[]      @relation("ConnectionRequests")
+  credentials           HostCredential[]
+  notifications         Notification[]
+  paymentMethods        PaymentMethod[]
+  
+  @@index([email])
+  @@index([googleId])
+  @@index([stripeConnectId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  userId      String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model VerificationCode {
+  id          String    @id @default(uuid())
+  userId      String
+  code        String
+  type        String    // EMAIL, PHONE
+  expiresAt   DateTime
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, type])
+  @@map("verification_codes")
+}
+
+// ============================================================
+// EXPERIENCES
+// ============================================================
+
+enum ExperienceStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  REJECTED
+  PAUSED
+  ARCHIVED
+}
+
+enum ExperienceCategory {
+  ARTS_CULTURE
+  ENTERTAINMENT
+  FOOD_DRINK
+  SPORTS
+  WELLNESS
+  NATURE_OUTDOORS
+  SIGHTSEEING
+  SOCIAL_IMPACT
+  ANIMALS
+  CLASSES_WORKSHOPS
+}
+
+enum ExperienceType {
+  IN_PERSON
+  ONLINE
+}
+
+model Experience {
+  id                String              @id @default(uuid())
+  hostId            String
+  
+  // Basic Info
+  title             String
+  tagline           String?
+  description       String
+  category          ExperienceCategory
+  type              ExperienceType      @default(IN_PERSON)
+  
+  // Details
+  duration          Int                 // Minutes
+  maxGuests         Int
+  language          String
+  skillLevel        String?             // Beginner, Intermediate, Advanced
+  fitnessLevel      String?             // Easy, Moderate, Difficult
+  accessibility     String[]            @default([])
+  
+  // Location (for in-person)
+  address           String?
+  city              String
+  country           String
+  latitude          Float?
+  longitude         Float?
+  meetingPoint      String?
+  
+  // Pricing
+  pricePerPerson    Float
+  groupDiscount     Float?              // Percentage discount for groups
+  
+  // Requirements & Inclusions
+  requirements      String[]            @default([])
+  included          String[]            @default([])
+  toBring           String[]            @default([])
+  
+  // Policies
+  cancellationDeadlineHours Int         @default(24)
+  minimumNoticeHours        Int         @default(24)
+  
+  // Status & Quality
+  status            ExperienceStatus    @default(DRAFT)
+  isInstantBook     Boolean             @default(false)
+  guestFavorite     Boolean             @default(false)
+  airbnbOriginal    Boolean             @default(false)
+  
+  // Metrics
+  totalBookings     Int                 @default(0)
+  totalReviews      Int                 @default(0)
+  averageRating     Float               @default(0)
+  viewCount         Int                 @default(0)
+  
+  // Timestamps
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  publishedAt       DateTime?
+  
+  // Relations
+  host              User                @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  itinerary         ItineraryStep[]
+  photos            ExperiencePhoto[]
+  schedules         Schedule[]
+  bookings          Booking[]
+  reviews           Review[]
+  wishlists         WishlistItem[]
+  
+  @@index([hostId])
+  @@index([category])
+  @@index([city])
+  @@index([status])
+  @@index([averageRating])
+  @@map("experiences")
+}
+
+model ItineraryStep {
+  id            String      @id @default(uuid())
+  experienceId  String
+  order         Int
+  title         String
+  description   String
+  duration      Int?        // Minutes for this step
+  
+  experience    Experience  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  
+  @@index([experienceId])
+  @@map("itinerary_steps")
+}
+
+model ExperiencePhoto {
+  id            String      @id @default(uuid())
+  experienceId  String
+  url           String
+  publicId      String      // Cloudinary public ID
+  order         Int
+  isCover       Boolean     @default(false)
+  isVideo       Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  
+  experience    Experience  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  
+  @@index([experienceId])
+  @@map("experience_photos")
+}
+
+model HostCredential {
+  id          String    @id @default(uuid())
+  hostId      String
+  type        String    // LICENSE, CERTIFICATION, AWARD
+  title       String
+  issuer      String?
+  url         String?   // URL to credential image/document
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  host        User      @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  
+  @@index([hostId])
+  @@map("host_credentials")
+}
+
+// ============================================================
+// SCHEDULING
+// ============================================================
+
+enum ScheduleStatus {
+  AVAILABLE
+  BOOKING_OPEN
+  FULLY_BOOKED
+  CANCELLED
+  COMPLETED
+}
+
+model Schedule {
+  id              String          @id @default(uuid())
+  experienceId    String
+  
+  startDateTime   DateTime
+  endDateTime     DateTime
+  maxSpots        Int
+  spotsRemaining  Int
+  
+  status          ScheduleStatus  @default(AVAILABLE)
+  
+  // Recurring schedule support
+  isRecurring     Boolean         @default(false)
+  recurringPattern String?        // DAILY, WEEKLY, MONTHLY
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  experience      Experience      @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+  attendees       ScheduleAttendee[]
+  
+  @@index([experienceId])
+  @@index([startDateTime])
+  @@index([status])
+  @@map("schedules")
+}
+
+model ScheduleAttendee {
+  id              String    @id @default(uuid())
+  scheduleId      String
+  bookingId       String
+  guestName       String
+  showInWhosGoing Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  
+  schedule        Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  @@index([scheduleId])
+  @@index([bookingId])
+  @@map("schedule_attendees")
+}
+
+// ============================================================
+// BOOKINGS & PAYMENTS
+// ============================================================
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED
+}
+
+model Booking {
+  id                String          @id @default(uuid())
+  guestId           String
+  experienceId      String
+  scheduleId        String
+  
+  // Guest Details
+  guestCount        Int
+  guestNames        String[]        @default([])
+  specialRequests   String?
+  messageToHost     String?
+  
+  // Pricing
+  pricePerPerson    Float
+  subtotal          Float           // pricePerPerson * guestCount
+  groupDiscount     Float           @default(0)
+  serviceFee        Float
+  taxes             Float
+  total             Float
+  
+  // Payment
+  stripePaymentIntentId String?
+  paidAt            DateTime?
+  
+  // Refund
+  refundAmount      Float?
+  refundedAt        DateTime?
+  
+  // Status
+  status            BookingStatus    @default(PENDING)
+  confirmationCode  String           @unique
+  
+  // Cancellation
+  cancelledBy       String?          // USER_ID or SYSTEM
+  cancellationReason String?
+  cancelledAt       DateTime?
+  
+  // Timestamps
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  
+  // Relations
+  guest             User             @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  experience        Experience       @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  schedule          Schedule         @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  review            Review?
+  attendees         ScheduleAttendee[]
+  transactions      Transaction[]
+  
+  @@index([guestId])
+  @@index([experienceId])
+  @@index([scheduleId])
+  @@index([status])
+  @@index([confirmationCode])
+  @@map("bookings")
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  PAYOUT
+  SERVICE_FEE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Transaction {
+  id              String              @id @default(uuid())
+  bookingId       String?
+  userId          String              // Guest or Host
+  
+  type            TransactionType
+  status          TransactionStatus   @default(PENDING)
+  
+  amount          Float
+  currency        String              @default("USD")
+  
+  stripeId        String?
+  
+  description     String?
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  completedAt     DateTime?
+  
+  booking         Booking?            @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  
+  @@index([bookingId])
+  @@index([userId])
+  @@index([type])
+  @@map("transactions")
+}
+
+model PaymentMethod {
+  id              String    @id @default(uuid())
+  userId          String
+  
+  stripePaymentMethodId String @unique
+  type            String    // card, bank_account
+  last4           String
+  brand           String?   // For cards
+  expiryMonth     Int?
+  expiryYear      Int?
+  
+  isDefault       Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+// ============================================================
+// REVIEWS
+// ============================================================
+
+model Review {
+  id                String    @id @default(uuid())
+  bookingId         String    @unique
+  experienceId      String
+  reviewerId        String
+  
+  // Ratings (1-5)
+  overallRating     Float
+  qualityRating     Float
+  communicationRating Float
+  accuracyRating    Float
+  locationRating    Float
+  valueRating       Float
+  
+  // Content
+  comment           String
+  photos            String[]  @default([])
+  
+  // Privacy
+  privateFeedback   String?   // Only host sees this
+  
+  // Double-blind reveal
+  revealedAt        DateTime?
+  
+  // Host Response
+  hostResponse      String?
+  hostRespondedAt   DateTime?
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  experience        Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  reviewer          User      @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  @@index([experienceId])
+  @@index([reviewerId])
+  @@map("reviews")
+}
+
+// ============================================================
+// MESSAGING
+// ============================================================
+
+enum ConversationType {
+  GUEST_HOST
+  GROUP_CHAT
+  CONNECTION_DM
+}
+
+model Conversation {
+  id          String              @id @default(uuid())
+  type        ConversationType    @default(GUEST_HOST)
+  bookingId   String?             @unique
+  scheduleId  String?             // For group chats
+  
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  members     ConversationMember[]
+  messages    Message[]
+  
+  @@index([bookingId])
+  @@index([scheduleId])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id              String        @id @default(uuid())
+  conversationId  String
+  userId          String
+  
+  lastReadAt      DateTime?
+  joinedAt        DateTime      @default(now())
+  
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id              String        @id @default(uuid())
+  conversationId  String
+  senderId        String
+  receiverId      String?       // For direct messages
+  
+  content         String
+  attachments     String[]      @default([])
+  
+  isSystem        Boolean       @default(false)
+  isRead          Boolean       @default(false)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver        User?         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: SetNull)
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
+}
+
+// ============================================================
+// SOCIAL & CONNECTIONS
+// ============================================================
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+model Connection {
+  id              String            @id @default(uuid())
+  requesterId     String
+  addresseeId     String
+  experienceId    String?
+  
+  status          ConnectionStatus  @default(PENDING)
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  requester       User              @relation("UserConnections", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee       User              @relation("ConnectionRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+  
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId])
+  @@index([addresseeId])
+  @@map("connections")
+}
+
+// ============================================================
+// WISHLISTS
+// ============================================================
+
+model Wishlist {
+  id          String          @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  isPublic    Boolean         @default(false)
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       WishlistItem[]
+  
+  @@index([userId])
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id              String      @id @default(uuid())
+  wishlistId      String
+  experienceId    String
+  note            String?
+  
+  createdAt       DateTime    @default(now())
+  
+  wishlist        Wishlist    @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  experience      Experience  @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  
+  @@unique([wishlistId, experienceId])
+  @@index([wishlistId])
+  @@index([experienceId])
+  @@map("wishlist_items")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  REVIEW_RECEIVED
+  MESSAGE_RECEIVED
+  CONNECTION_REQUEST
+  PAYMENT_RECEIVED
+  EXPERIENCE_APPROVED
+  EXPERIENCE_REJECTED
+  REMINDER_24H
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  userId      String
+  type        NotificationType
+  
+  title       String
+  message     String
+  data        Json?             // Additional metadata
+  
+  isRead      Boolean           @default(false)
+  
+  createdAt   DateTime          @default(now())
+  
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ============================================================
+// CATEGORIES (Seed Data)
+// ============================================================
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  icon        String?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  
+  createdAt   DateTime  @default(now())
+  
+  @@map("categories")
+}
