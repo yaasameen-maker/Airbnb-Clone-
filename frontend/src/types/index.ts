@@ -1,9 +1,11 @@
 // User types
-export enum UserRole {
-  USER = 'USER',
-  HOST = 'HOST',
-  ADMIN = 'ADMIN',
-}
+export const UserRole = {
+  USER: 'USER',
+  HOST: 'HOST',
+  ADMIN: 'ADMIN',
+} as const;
+
+export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export interface User {
   id: string;
@@ -20,23 +22,27 @@ export interface User {
 }
 
 // Experience types
-export enum ExperienceCategory {
-  OUTDOOR_ADVENTURE = 'OUTDOOR_ADVENTURE',
-  FOOD_DRINK = 'FOOD_DRINK',
-  ART_CULTURE = 'ART_CULTURE',
-  SPORTS_FITNESS = 'SPORTS_FITNESS',
-  WELLNESS = 'WELLNESS',
-  ENTERTAINMENT = 'ENTERTAINMENT',
-}
+export const ExperienceCategory = {
+  OUTDOOR_ADVENTURE: 'OUTDOOR_ADVENTURE',
+  FOOD_DRINK: 'FOOD_DRINK',
+  ART_CULTURE: 'ART_CULTURE',
+  SPORTS_FITNESS: 'SPORTS_FITNESS',
+  WELLNESS: 'WELLNESS',
+  ENTERTAINMENT: 'ENTERTAINMENT',
+} as const;
 
-export enum ExperienceStatus {
-  DRAFT = 'DRAFT',
-  PENDING_REVIEW = 'PENDING_REVIEW',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  SUSPENDED = 'SUSPENDED',
-  INACTIVE = 'INACTIVE',
-}
+export type ExperienceCategory = typeof ExperienceCategory[keyof typeof ExperienceCategory];
+
+export const ExperienceStatus = {
+  DRAFT: 'DRAFT',
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  SUSPENDED: 'SUSPENDED',
+  INACTIVE: 'INACTIVE',
+} as const;
+
+export type ExperienceStatus = typeof ExperienceStatus[keyof typeof ExperienceStatus];
 
 export interface Experience {
   id: string;
@@ -62,12 +68,14 @@ export interface Experience {
 }
 
 // Booking types
-export enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-}
+export const BookingStatus = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export type BookingStatus = typeof BookingStatus[keyof typeof BookingStatus];
 
 export interface Booking {
   id: string;

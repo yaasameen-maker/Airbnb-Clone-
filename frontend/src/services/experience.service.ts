@@ -4,7 +4,6 @@ import type {
   ExperienceFilters,
   PaginatedResponse,
   ApiResponse,
-  CreateExperienceForm,
 } from '../types';
 
 export const experienceService = {
