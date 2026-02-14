@@ -5,7 +5,7 @@ import { bookingService } from '../services/booking.service';
 import { useAuthStore } from '../store/auth.store';
 import type { Booking } from '../types';
 import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 import toast from 'react-hot-toast';
 
 export function DashboardPage() {

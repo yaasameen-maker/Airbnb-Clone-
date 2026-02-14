@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { MapPin, Star } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import { experienceService } from '../services/experience.service';
 import { ExperienceCategory } from '../types';
 import type { Experience, ExperienceFilters } from '../types';

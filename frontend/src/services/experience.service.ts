@@ -32,11 +32,15 @@ export const experienceService = {
       }
       
       return Promise.resolve({
+        success: true,
+        message: 'Experiences fetched successfully',
         data: filtered,
-        total: filtered.length,
-        page: 1,
-        limit: 20,
-        totalPages: 1,
+        pagination: {
+          total: filtered.length,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        },
       });
     }
     

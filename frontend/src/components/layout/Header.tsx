@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, User, LogOut, Calendar, Home } from 'lucide-react';
+import { Menu, User, LogOut, Calendar, Home, X } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRole } from '../../types';
 import { useState } from 'react';
@@ -8,18 +8,22 @@ export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleLogout = async () => {
     await logout();
+    setShowMobileMenu(false);
     navigate('/');
   };
+
+  const closeMobileMenu = () => setShowMobileMenu(false);
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
             <Home className="h-8 w-8 text-primary-600" />
             <span className="text-xl font-bold text-gray-900">Airbnb Experiences</span>
           </Link>
@@ -83,7 +87,7 @@ export function Header() {
                 <Link to="/login" className="text-gray-700 hover:text-gray-900 font-medium">
                   Log in
                 </Link>
-                <Link to="/signup" className="btn-primary px-4 py-2 rounded-md">
+                <Link to="/signup" className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md font-medium">
                   Sign up
                 </Link>
               </>
@@ -91,11 +95,97 @@ export function Header() {
           </nav>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden p-2">
-            <Menu className="h-6 w-6" />
+          <button 
+            className="md:hidden p-2"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            aria-label="Toggle mobile menu"
+          >
+            {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
       </div>
+
+      {/* Mobile Menu Panel */}
+      {showMobileMenu && (
+        <div className="md:hidden bg-white border-t border-gray-200">
+          <nav className="px-4 py-4 space-y-3">
+            <Link 
+              to="/experiences" 
+              className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+              onClick={closeMobileMenu}
+            >
+              Explore
+            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                {user?.role === UserRole.HOST && (
+                  <Link 
+                    to="/host/experiences" 
+                    className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+                    onClick={closeMobileMenu}
+                  >
+                    My Experiences
+                  </Link>
+                )}
+                
+                {user?.role === UserRole.ADMIN && (
+                  <Link 
+                    to="/admin" 
+                    className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+                    onClick={closeMobileMenu}
+                  >
+                    Admin
+                  </Link>
+                )}
+                
+                <Link 
+                  to="/bookings" 
+                  className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  <Calendar className="inline h-4 w-4 mr-1" />
+                  Bookings
+                </Link>
+                
+                <Link 
+                  to="/profile" 
+                  className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  <User className="inline h-4 w-4 mr-1" />
+                  Profile
+                </Link>
+                
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left py-2 text-gray-700 hover:text-gray-900 font-medium flex items-center"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/login" 
+                  className="block py-2 text-gray-700 hover:text-gray-900 font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  Log in
+                </Link>
+                <Link 
+                  to="/signup" 
+                  className="block py-2 bg-primary-600 text-white text-center rounded-md font-medium"
+                  onClick={closeMobileMenu}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

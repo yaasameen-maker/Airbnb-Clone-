@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 
 const bookingSchema = z.object({
   bookingDate: z.string().min(1, 'Please select a date'),
-  numberOfGuests: z.coerce.number().min(1, 'At least 1 guest required'),
+  numberOfGuests: z.number().min(1, 'At least 1 guest required'),
   specialRequests: z.string().optional(),
 });
 
@@ -183,7 +183,7 @@ export function BookingPage() {
                         </label>
                         <Input
                           type="number"
-                          {...register('numberOfGuests')}
+                          {...register('numberOfGuests', { valueAsNumber: true })}
                           min="1"
                           max={experience.maxGroupSize}
                         />

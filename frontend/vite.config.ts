@@ -30,12 +30,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false, // Set to true for production debugging
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production',
-      },
-    },
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
