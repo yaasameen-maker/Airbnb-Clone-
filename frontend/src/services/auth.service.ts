@@ -13,7 +13,7 @@ export const authService = {
   },
 
   async signup(data: SignupRequest): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/auth/signup', data);
+    return apiClient.post<AuthResponse>('/auth/register', data);
   },
 
   async logout(): Promise<ApiResponse> {

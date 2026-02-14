@@ -10,10 +10,14 @@ import { useAuthStore } from '../store/auth.store';
 import { UserRole } from '../types';
 
 const signupSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
   confirmPassword: z.string(),
   role: z.nativeEnum(UserRole).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -89,13 +93,18 @@ export function SignupPage() {
                 error={errors.email?.message}
               />
 
-              <Input
-                {...register('password')}
-                type="password"
-                label="Password"
-                placeholder="••••••••"
-                error={errors.password?.message}
-              />
+              <div>
+                <Input
+                  {...register('password')}
+                  type="password"
+                  label="Password"
+                  placeholder="••••••••"
+                  error={errors.password?.message}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Must be 8+ characters with uppercase, lowercase, and number
+                </p>
+              </div>
 
               <Input
                 {...register('confirmPassword')}

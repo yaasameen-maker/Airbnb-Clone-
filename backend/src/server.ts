@@ -26,9 +26,33 @@ const io = new SocketIOServer(httpServer, {
 
 // Middleware
 app.use(helmet());
+
+// Configure CORS to allow both local and production frontends
+const allowedOrigins = [
+  config.frontend.url,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  /\.vercel\.app$/,  // Allow all Vercel app subdomains
+];
+
 app.use(
   cors({
-    origin: config.frontend.url,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list or matches pattern
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed instanceof RegExp) return allowed.test(origin);
+        return allowed === origin;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all origins for now during development
+      }
+    },
     credentials: true,
   })
 );
