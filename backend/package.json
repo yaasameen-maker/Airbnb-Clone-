@@ -10,7 +10,7 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed": "ts-node prisma/seed.mvp.ts",
     "prisma:studio": "prisma studio",
     "seed": "ts-node src/utils/seed.ts",
     "test": "jest --watchAll=false",
