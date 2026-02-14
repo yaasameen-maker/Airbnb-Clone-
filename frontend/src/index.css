@@ -1,1 +1,88 @@
 @import "tailwindcss";
+
+/* Custom Component Styles */
+
+/* Card Component */
+.card {
+  @apply bg-white rounded-lg border border-gray-200 shadow-sm transition-shadow;
+}
+
+.card:hover {
+  @apply shadow-md;
+}
+
+/* Input Component */
+.input {
+  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded hover:bg-gray-500;
+}
+
+/* Selection Color */
+::selection {
+  @apply bg-primary-200 text-primary-900;
+}
+
+/* Smooth Transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Utility Classes */
+.line-clamp-1 {
+  @apply overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+.line-clamp-2 {
+  @apply line-clamp;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  @apply line-clamp;
+  -webkit-line-clamp: 3;
+}
+
+/* Responsive Design Helpers */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in;
+}
+

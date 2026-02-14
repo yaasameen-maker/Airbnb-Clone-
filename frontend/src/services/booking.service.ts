@@ -12,8 +12,15 @@ export const bookingService = {
     return apiClient.post<ApiResponse<Booking>>('/bookings', data);
   },
 
-  async getMyBookings(filters?: BookingFilters): Promise<PaginatedResponse<Booking>> {
-    const params = new URLSearchParams(filters as any);
+  async getUserBookings(filters?: BookingFilters): Promise<PaginatedResponse<Booking>> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.append(key, String(value));
+        }
+      });
+    }
     return apiClient.get<PaginatedResponse<Booking>>(`/bookings/my?${params.toString()}`);
   },
 
@@ -33,7 +40,10 @@ export const bookingService = {
     return apiClient.get<PaginatedResponse<Booking>>(`/experiences/${experienceId}/bookings`);
   },
 
-  async getAvailability(experienceId: string, date: string): Promise<ApiResponse<{ available: boolean; spotsLeft: number }>> {
+  async getAvailability(
+    experienceId: string,
+    date: string
+  ): Promise<ApiResponse<{ available: boolean; spotsLeft: number }>> {
     return apiClient.get<ApiResponse<{ available: boolean; spotsLeft: number }>>(
       `/experiences/${experienceId}/availability?date=${date}`
     );
